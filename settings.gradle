@@ -106,6 +106,7 @@ include('semver-checker:semver-checker-cli')
 include('semver-checker:semver-checker-core')
 include(':compiler-plugins:package-semantic-analyzer')
 include(':compiler-plugins:configurable-schema-generator')
+include(':compiler-plugins:component-model-generator')
 include(':formatter:formatter-core')
 include(':formatter:formatter-cli')
 include(':ls-extensions:json-to-record-converter')
@@ -242,6 +243,7 @@ project(':semver-checker:semver-checker-core').projectDir = file('misc/semver-ch
 project(':semver-checker:semver-checker-cli').projectDir = file('misc/semver-checker/modules/semver-checker-cli')
 project(':compiler-plugins:package-semantic-analyzer').projectDir = file('misc/compiler-plugins/modules/package-semantic-analyzer')
 project(':compiler-plugins:configurable-schema-generator').projectDir = file('misc/compiler-plugins/modules/configurable-schema-generator')
+project(':compiler-plugins:component-model-generator').projectDir = file('misc/compiler-plugins/modules/component-model-generator')
 project(':formatter:formatter-core').projectDir = file('misc/formatter/modules/formatter-core')
 project(':formatter:formatter-cli').projectDir = file('misc/formatter/modules/formatter-cli')
 project(':ls-extensions:json-to-record-converter').projectDir = file('misc/ls-extensions/modules/json-to-record-converter')
@@ -256,3 +258,4 @@ buildCache {
         push = true
     }
 }
+
