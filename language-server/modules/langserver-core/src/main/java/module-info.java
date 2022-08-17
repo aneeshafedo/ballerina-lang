@@ -22,6 +22,7 @@ module io.ballerina.language.server.core {
     exports org.ballerinalang.langserver.telemetry;
     exports org.ballerinalang.langserver.util to io.ballerina.language.server.simulator;
     exports org.ballerinalang.langserver.codeaction to io.ballerina.datamapper;
+    exports org.ballerinalang.langserver.workspace;
     requires io.ballerina.diagram.util;
     requires io.ballerina.formatter.core;
     requires org.eclipse.lsp4j;
