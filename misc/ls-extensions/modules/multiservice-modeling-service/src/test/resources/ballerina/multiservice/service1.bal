@@ -7,6 +7,13 @@ public enum GreetingTime {
     NIGHT
 }
 
+type RecTest record  {
+ int? id;
+ string|() name = "";
+ http:Request request?;
+ Post[] newPosts?;
+};
+
 @choreo:Service{id: "001"}
 service /greeting on new http:Listener(9090) {
     @choreo:Client { serviceId: "002"}

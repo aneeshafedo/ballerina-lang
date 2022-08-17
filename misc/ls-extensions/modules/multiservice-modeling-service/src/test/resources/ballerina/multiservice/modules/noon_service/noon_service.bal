@@ -1,5 +1,12 @@
 import ballerina/http;
 
+type User record  {
+ readonly int id;
+ string name;
+ Post[] posts;
+ Profile profile?;
+};
+
 @choreo:Service{id: "002"}
 service /noon on new http:Listener(8080) {
     resource function get hello () returns string|error {

@@ -6,5 +6,6 @@ module io.ballerina.LSExtensions.MultiServiceModelingService {
     requires io.ballerina.parser;
     requires com.google.gson;
     requires io.ballerina.tools.api;
+    requires io.ballerina.language.server.core;
 
 }

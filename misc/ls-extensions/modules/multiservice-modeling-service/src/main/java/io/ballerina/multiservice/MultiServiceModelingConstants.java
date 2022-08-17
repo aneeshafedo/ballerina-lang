@@ -1,5 +1,11 @@
 package io.ballerina.multiservice;
 
+import org.wso2.ballerinalang.compiler.tree.types.BLangUserDefinedType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Constants use for Solution Architecture model generation.
  */
@@ -26,4 +32,31 @@ public class MultiServiceModelingConstants {
     }
 
     public static final String CAPABILITY_NAME = "multiServiceModelingService";
+
+    public static final List<String> PRIMITIVE_TYPES = new ArrayList<>(
+            Arrays.asList("string", "boolean", "int", "float", "decimal"));
+
+    public static final String COLON = ":";
+    public static final String FORWARD_SLASH = "/";
+
+    public enum CardinalityValue  {
+        ZERO("0"),
+        ZERO_OR_ONE("0-1"),
+        ZERO_OR_MANY("0-m"),
+        ONE("1"),
+        ONE_AND_ONLY_ONE("1-1"),
+        ONE_OR_MANY("1-m"),
+        MANY("m");
+
+        private final String cardinalityValue;
+
+        CardinalityValue(String cardinalityValue) {
+            this.cardinalityValue = cardinalityValue;
+        }
+
+        public String getValue() {
+            return this.cardinalityValue;
+        }
+    }
+
 }
