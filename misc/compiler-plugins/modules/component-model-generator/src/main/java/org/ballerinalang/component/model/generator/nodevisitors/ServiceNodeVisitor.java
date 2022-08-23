@@ -9,13 +9,12 @@ import io.ballerina.compiler.syntax.tree.Node;
 import io.ballerina.compiler.syntax.tree.NodeList;
 import io.ballerina.compiler.syntax.tree.NodeVisitor;
 import io.ballerina.compiler.syntax.tree.ServiceDeclarationNode;
-import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.projects.Document;
+import org.ballerinalang.component.model.generator.model.ComponentModel;
 import org.ballerinalang.component.model.generator.model.Service;
+import org.ballerinalang.component.model.generator.model.entity.Entity;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Visitor class for ServiceDeclaration nodes.
@@ -27,13 +26,16 @@ public class ServiceNodeVisitor extends NodeVisitor {
     private final Document document;
     private final List<Service> services = new ArrayList<>();
 
+    private final ComponentModel.PackageId packageId;
+
     public List<Service> getServices() {
         return services;
     }
 
-    public ServiceNodeVisitor(SemanticModel semanticModel, Document document) {
+    public ServiceNodeVisitor(SemanticModel semanticModel, Document document, ComponentModel.PackageId packageId) {
         this.semanticModel = semanticModel;
         this.document = document;
+        this.packageId = packageId;
     }
 
     @Override
@@ -61,17 +63,12 @@ public class ServiceNodeVisitor extends NodeVisitor {
     }
 
     @Override
-    public void visit(TypeDefinitionNode typeDefinitionNode) {
+    public void visit (ImportDeclarationNode importDeclarationNode){
 
     }
 
     @Override
-    public void visit(ImportDeclarationNode importDeclarationNode) {
-
-    }
-
-    @Override
-    public void visit(EnumDeclarationNode enumDeclarationNode) {
+    public void visit (EnumDeclarationNode enumDeclarationNode){
 
     }
 }

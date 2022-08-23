@@ -1,9 +1,6 @@
 package org.ballerinalang.component.model.generator;
 
-import io.ballerina.projects.plugins.CodeAnalysisContext;
-import io.ballerina.projects.plugins.CodeAnalyzer;
-import io.ballerina.projects.plugins.CompilerPlugin;
-import io.ballerina.projects.plugins.CompilerPluginContext;
+import io.ballerina.projects.plugins.*;
 
 public class ComponentModelGenerator extends CompilerPlugin {
     @Override
@@ -11,10 +8,16 @@ public class ComponentModelGenerator extends CompilerPlugin {
         pluginContext.addCodeAnalyzer(new ComponentModelAnalyzer());
     }
 
+//    public static class ComponentModelLifeCycleListener extends CompilerLifecycleListener {
+//        @Override
+//        public void init(CompilerLifecycleContext compilerLifecycleContext) {
+//            compilerLifecycleContext.addCodeGenerationCompletedTask(new ComponentModelGenTask());
+//        }
+//    }
     public static class ComponentModelAnalyzer extends CodeAnalyzer {
         @Override
-        public void init(CodeAnalysisContext analysisContext) {
-            analysisContext.addCompilationAnalysisTask(new ComponentModelGenTask());
+        public void init(CodeAnalysisContext codeAnalysisContext) {
+            codeAnalysisContext.addCompilationAnalysisTask(new ComponentModelGenTask());
         }
     }
 }

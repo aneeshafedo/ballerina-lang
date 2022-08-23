@@ -6,6 +6,8 @@ import io.ballerina.projects.ProjectException;
 import io.ballerina.projects.ProjectKind;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
+import io.ballerina.projects.plugins.CompilerLifecycleEventContext;
+import io.ballerina.projects.plugins.CompilerLifecycleTask;
 import io.ballerina.projects.util.ProjectConstants;
 import org.ballerinalang.component.model.generator.model.ComponentModel;
 
@@ -21,11 +23,12 @@ public class ComponentModelGenTask implements AnalysisTask<CompilationAnalysisCo
 
     @Override
     public void perform(CompilationAnalysisContext compilationAnalysisContext) {
+
         // when to write the file - when service has being defined ? or compilation option given
         // unable to find the semantic model
         Project project = compilationAnalysisContext.currentPackage().project();
         ComponentModelConstructor componentModelConstructor = new ComponentModelConstructor();
-        componentModelConstructor.constructComponentModel(project, null);
+        componentModelConstructor.constructComponentModel(project);
         ComponentModel componentModel = componentModelConstructor.getComponentModel();
         Gson gson = new Gson();
         String componentModelStr = gson.toJson(componentModel);
