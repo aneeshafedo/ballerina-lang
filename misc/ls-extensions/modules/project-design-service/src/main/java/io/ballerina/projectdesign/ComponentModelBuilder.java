@@ -21,7 +21,7 @@ package io.ballerina.projectdesign;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.projectdesign.ComponentModel.PackageId;
 import io.ballerina.projectdesign.entitymodel.EntityModelGenerator;
-import io.ballerina.projectdesign.entitymodel.components.Entity;
+import io.ballerina.projectdesign.entitymodel.components.Type;
 import io.ballerina.projectdesign.servicemodel.ServiceModelGenerator;
 import io.ballerina.projectdesign.servicemodel.components.Service;
 import io.ballerina.projects.DocumentId;
@@ -42,7 +42,7 @@ public class ComponentModelBuilder {
 
         Map<String, Service> services = new HashMap<>();
         // todo: Change to TypeDefinition
-        Map<String, Entity> entities = new HashMap<>();
+        Map<String, Type> entities = new HashMap<>();
 
         PackageId packageId = new PackageId(currentPackage);
 
@@ -60,7 +60,7 @@ public class ComponentModelBuilder {
             services.putAll(serviceModelGenerator.generate(documentIds, module, currentPackage));
 
             EntityModelGenerator entityModelGenerator = new EntityModelGenerator(
-                    currentSemanticModel, packageId, moduleRootPath);
+                    currentSemanticModel, packageId, moduleRootPath, currentPackage);
             entities.putAll(entityModelGenerator.generate());
         });
 

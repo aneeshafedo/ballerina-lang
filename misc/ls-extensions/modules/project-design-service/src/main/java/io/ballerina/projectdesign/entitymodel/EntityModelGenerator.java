@@ -18,29 +18,58 @@
 
 package io.ballerina.projectdesign.entitymodel;
 
+import io.ballerina.compiler.api.ModuleID;
 import io.ballerina.compiler.api.SemanticModel;
+import io.ballerina.compiler.api.symbols.AnnotationAttachmentSymbol;
+import io.ballerina.compiler.api.symbols.AnnotationSymbol;
 import io.ballerina.compiler.api.symbols.ArrayTypeSymbol;
+import io.ballerina.compiler.api.symbols.ModuleSymbol;
 import io.ballerina.compiler.api.symbols.NilTypeSymbol;
 import io.ballerina.compiler.api.symbols.RecordFieldSymbol;
 import io.ballerina.compiler.api.symbols.RecordTypeSymbol;
 import io.ballerina.compiler.api.symbols.Symbol;
 import io.ballerina.compiler.api.symbols.SymbolKind;
 import io.ballerina.compiler.api.symbols.TypeDefinitionSymbol;
+import io.ballerina.compiler.api.symbols.TypeDescKind;
 import io.ballerina.compiler.api.symbols.TypeReferenceTypeSymbol;
 import io.ballerina.compiler.api.symbols.TypeSymbol;
 import io.ballerina.compiler.api.symbols.UnionTypeSymbol;
+import io.ballerina.compiler.api.values.ConstantValue;
+import io.ballerina.compiler.syntax.tree.AnnotationNode;
+import io.ballerina.compiler.syntax.tree.BasicLiteralNode;
+import io.ballerina.compiler.syntax.tree.ExpressionNode;
+import io.ballerina.compiler.syntax.tree.ListConstructorExpressionNode;
+import io.ballerina.compiler.syntax.tree.MappingConstructorExpressionNode;
+import io.ballerina.compiler.syntax.tree.MappingFieldNode;
+import io.ballerina.compiler.syntax.tree.ModulePartNode;
+import io.ballerina.compiler.syntax.tree.Node;
+import io.ballerina.compiler.syntax.tree.NodeList;
+import io.ballerina.compiler.syntax.tree.NonTerminalNode;
+import io.ballerina.compiler.syntax.tree.SeparatedNodeList;
+import io.ballerina.compiler.syntax.tree.SpecificFieldNode;
+import io.ballerina.compiler.syntax.tree.SyntaxKind;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.projectdesign.ComponentModel;
 import io.ballerina.projectdesign.ComponentModel.PackageId;
 import io.ballerina.projectdesign.ProjectDesignConstants.CardinalityValue;
 import io.ballerina.projectdesign.entitymodel.components.Association;
 import io.ballerina.projectdesign.entitymodel.components.Attribute;
-import io.ballerina.projectdesign.entitymodel.components.Entity;
+import io.ballerina.projectdesign.entitymodel.components.Type;
+import io.ballerina.projects.DocumentId;
+import io.ballerina.projects.Package;
+import io.ballerina.tools.diagnostics.Location;
 import io.ballerina.tools.text.LineRange;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.ballerina.projectdesign.ProjectDesignConstants.ARRAY;
@@ -57,23 +86,91 @@ public class EntityModelGenerator {
     private final SemanticModel semanticModel;
     private final ComponentModel.PackageId packageId;
     private final String moduleRootPath;
+    private final Package currentPackage;
 
     public EntityModelGenerator(SemanticModel semanticModel, ComponentModel.PackageId packageId,
-                                String moduleRootPath) {
+                                String moduleRootPath, Package currentPackage) {
 
         this.semanticModel = semanticModel;
         this.packageId = packageId;
         this.moduleRootPath = moduleRootPath;
+        this.currentPackage = currentPackage;
     }
 
-    public Map<String, Entity> generate() {
+    private void getAnnotation(TypeDefinitionSymbol typeDefinitionSymbol) {
+        Optional<Location> location = typeDefinitionSymbol.getLocation();
+        List<AnnotationSymbol> annotations = typeDefinitionSymbol.annotations();
+        if (!annotations.isEmpty()) {
+            Optional<ModuleSymbol> optionalModuleSymbol = typeDefinitionSymbol.getModule();
+            AnnotationSymbol annotationSymbol = typeDefinitionSymbol.annotations().get(0);
+            annotationSymbol.getModule().get().id();
 
-        Map<String, Entity> entities = new HashMap<>();
+            // keep a map of document paths and syntax trees to access the syntax tree directly
+            typeDefinitionSymbol.getLocation().get().lineRange().filePath();
+            if (optionalModuleSymbol.isPresent()) {
+                ModuleID moduleID = optionalModuleSymbol.get().id();
+                currentPackage.modules().forEach(module -> {
+                    if (Objects.equals(moduleID.moduleName(), module.moduleName().toString())) {
+                        Collection<DocumentId> documentIds = module.documentIds();
+                        for (DocumentId documentId : documentIds) {
+                            SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
+                            NonTerminalNode node = ((ModulePartNode) syntaxTree.rootNode())
+                                    .findNode(location.get().textRange());
+                            if (!node.isMissing() && node instanceof TypeDefinitionNode) {
+                                TypeDefinitionNode typeDefinitionNode = (TypeDefinitionNode) node;
+                                if (typeDefinitionNode.typeName().text().equals(typeDefinitionSymbol.getName().get())) {
+                                    NodeList<AnnotationNode> annotationNodes = typeDefinitionNode.metadata().get().annotations();
+                                    for (AnnotationNode annotationNode : annotationNodes) {
+                                        Map<String, List<String>> entityAnnotFields = new HashMap<>();
+                                        String annotType = annotationNode.annotReference().toString();
+                                        Optional<MappingConstructorExpressionNode> annotationConstructorOptional = annotationNode.annotValue();
+                                        if (annotationConstructorOptional.isPresent()) {
+                                            MappingConstructorExpressionNode annotationConstructor = annotationConstructorOptional.get();
+                                            SeparatedNodeList<MappingFieldNode> mappingFieldNodes = annotationConstructor.fields();
+                                            for (MappingFieldNode fieldNode : mappingFieldNodes) {
+                                                SpecificFieldNode specificFieldNode = (SpecificFieldNode) fieldNode;
+                                                String key = specificFieldNode.fieldName().toString();
+                                                List<String> values = new LinkedList<>();
+                                                Optional<ExpressionNode> expressionNode = specificFieldNode.valueExpr();
+                                                if (expressionNode.isPresent()) {
+                                                    if (expressionNode.get().kind().equals(SyntaxKind.LIST_CONSTRUCTOR)) {
+                                                        ListConstructorExpressionNode listNode = (ListConstructorExpressionNode) expressionNode.get();
+                                                        SeparatedNodeList<Node> expressions = listNode.expressions();
+                                                        for (Node exp : expressions) {
+                                                            if (exp instanceof BasicLiteralNode) {
+                                                                BasicLiteralNode literalNode = (BasicLiteralNode) exp;
+                                                                values.add(literalNode.literalToken().text());
+                                                            }
+                                                        }
+                                                    } else {
+                                                        values.add(expressionNode.get().toString());
+                                                    }
+                                                }
+                                                entityAnnotFields.put(key, values);
+                                            }
+
+                                        }
+                                    }
+                                    break;
+                                }
+
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    public Map<String, Type> generate() {
+
+        Map<String, Type> types = new HashMap<>();
         List<Symbol> symbols = semanticModel.moduleSymbols();
         for (Symbol symbol : symbols) {
             if (symbol.kind().equals(SymbolKind.TYPE_DEFINITION)) {
                 TypeDefinitionSymbol typeDefinitionSymbol = (TypeDefinitionSymbol) symbol;
                 if (typeDefinitionSymbol.typeDescriptor() instanceof RecordTypeSymbol) {
+                    getAnnotation(typeDefinitionSymbol);
                     String entityName = getEntityName(packageId, typeDefinitionSymbol.moduleQualifiedName());
                     List<Attribute> attributeList = new ArrayList<>();
                     List<String> inclusionList = new ArrayList<>();
@@ -102,12 +199,12 @@ public class EntityModelGenerator {
                         recordLineRange = LineRange.from(filePath, typeLineRange.startLine(), typeLineRange.endLine());
                     }
 
-                    Entity entity = new Entity(attributeList, inclusionList, recordLineRange);
-                    entities.put(entityName, entity);
+                    Type type = new Type(attributeList, inclusionList, recordLineRange, new LinkedList<>());
+                    types.put(entityName, type);
                 }
             }
         }
-        return entities;
+        return types;
     }
 
     private Map<String, RecordFieldSymbol> getOriginalFieldMap(

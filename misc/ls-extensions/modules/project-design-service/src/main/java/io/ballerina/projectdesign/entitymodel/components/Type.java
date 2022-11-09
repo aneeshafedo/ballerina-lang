@@ -27,19 +27,22 @@ import java.util.List;
  *
  * @since 2201.2.2
  */
-public class Entity {
+public class Type {
 
     private List<Attribute> attributes;
     private final List<String> inclusions;
     private final LineRange lineRange;
 
+    private final List<Annotation> annotationList;
+
     // todo : send the location
 
-    public Entity(List<Attribute> attributes, List<String> inclusions, LineRange lineRange) {
+    public Type(List<Attribute> attributes, List<String> inclusions, LineRange lineRange, List<Annotation> annotationList) {
 
         this.attributes = attributes;
         this.inclusions = inclusions;
         this.lineRange = lineRange;
+        this.annotationList = annotationList;
     }
 
     public List<Attribute> getAttributes() {
