@@ -27,7 +27,6 @@ import io.ballerina.projects.DocumentId;
 import io.ballerina.projects.Module;
 import io.ballerina.projects.Package;
 
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,10 +40,10 @@ public class ServiceModelGenerator {
 
     private final SemanticModel semanticModel;
     private final ComponentModel.PackageId packageId;
-    private final Path moduleRootPath;
+    private final String moduleRootPath;
 
     public ServiceModelGenerator(SemanticModel semanticModel, ComponentModel.PackageId packageId,
-                                 Path moduleRootPath) {
+                                 String moduleRootPath) {
 
         this.semanticModel = semanticModel;
         this.packageId = packageId;
@@ -55,7 +54,7 @@ public class ServiceModelGenerator {
         Map<String, Service> services = new HashMap<>();
         for (DocumentId documentId : documentIds) {
             SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
-            Path filePath = moduleRootPath.resolve(syntaxTree.filePath());
+            String filePath = String.format("%s/%s", moduleRootPath, syntaxTree.filePath());
             ServiceDeclarationNodeVisitor serviceNodeVisitor = new
                     ServiceDeclarationNodeVisitor(semanticModel, currentPackage, packageId, filePath);
             syntaxTree.rootNode().accept(serviceNodeVisitor);

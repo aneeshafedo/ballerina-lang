@@ -46,14 +46,13 @@ import io.ballerina.compiler.syntax.tree.SyntaxKind;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
 import io.ballerina.projectdesign.ComponentModel;
 import io.ballerina.projectdesign.ProjectDesignConstants.ParameterIn;
-import io.ballerina.projectdesign.generators.GeneratorUtils;
-import io.ballerina.projectdesign.model.ElementLocation;
 import io.ballerina.projectdesign.model.service.FunctionParameter;
 import io.ballerina.projectdesign.model.service.RemoteFunction;
 import io.ballerina.projectdesign.model.service.Resource;
 import io.ballerina.projectdesign.model.service.ResourceId;
 import io.ballerina.projectdesign.model.service.ResourceParameter;
 import io.ballerina.projects.Package;
+import io.ballerina.tools.text.LineRange;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -95,8 +94,8 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
 
     @Override
     public void visit(FunctionDefinitionNode functionDefinitionNode) {
-        ElementLocation elementLocation = GeneratorUtils.getElementLocation(filePath,
-                functionDefinitionNode.lineRange());
+        LineRange lineRange = LineRange.from(filePath,
+                functionDefinitionNode.lineRange().startLine(), functionDefinitionNode.lineRange().endLine());
         SyntaxKind kind = functionDefinitionNode.kind();
         switch (kind) {
             case RESOURCE_ACCESSOR_DEFINITION: {
@@ -130,7 +129,7 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
                 ResourceId resourceId = new ResourceId(this.serviceId, method, resourcePath);
                 Resource resource = new Resource(identifierBuilder.toString().trim(),
                         resourceId, resourceParameterList, returnTypes,
-                        actionNodeVisitor.getInteractionList(), elementLocation);
+                        actionNodeVisitor.getInteractionList(), lineRange);
                 resources.add(resource);
 
                 break;
@@ -150,7 +149,7 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
                     functionDefinitionNode.accept(actionNodeVisitor);
 
                     RemoteFunction remoteFunction = new RemoteFunction(name, parameterList, returnTypes,
-                            actionNodeVisitor.getInteractionList(), elementLocation);
+                            actionNodeVisitor.getInteractionList(), lineRange);
                     remoteFunctions.add(remoteFunction);
                 }
                 break;
@@ -159,8 +158,8 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
     }
 
     private ResourceParameter getPathParameter(ResourcePathParameterNode resourcePathParameterNode) {
-        ElementLocation elementLocation = GeneratorUtils.getElementLocation(this.filePath,
-                resourcePathParameterNode.lineRange());
+        LineRange lineRange = LineRange.from(filePath,
+                resourcePathParameterNode.lineRange().startLine(), resourcePathParameterNode.lineRange().endLine());
         String name = resourcePathParameterNode.paramName().get().text();
         List<String> paramTypes = new LinkedList<>();
         Optional<Symbol> symbol = semanticModel.symbol(resourcePathParameterNode);
@@ -168,7 +167,7 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
             PathParameterSymbol parameterSymbol = ((PathParameterSymbol) symbol.get());
             paramTypes = getReferencedType(parameterSymbol.typeDescriptor());
         } // todo : implement else
-        return new ResourceParameter(paramTypes, name, ParameterIn.PATH.getValue(), true, elementLocation);
+        return new ResourceParameter(paramTypes, name, ParameterIn.PATH.getValue(), true, lineRange);
     }
 
     private void getParameters(FunctionSignatureNode functionSignatureNode, boolean isResource,
@@ -176,8 +175,8 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
 
         SeparatedNodeList<ParameterNode> parameterNodes = functionSignatureNode.parameters();
         for (ParameterNode parameterNode : parameterNodes) {
-            ElementLocation elementLocation = GeneratorUtils.getElementLocation(this.filePath,
-                    parameterNode.lineRange());
+            LineRange lineRange = LineRange.from(filePath,
+                    parameterNode.lineRange().startLine(), parameterNode.lineRange().endLine());
             Optional<Symbol> symbol = semanticModel.symbol(parameterNode);
             if (symbol.isPresent() && symbol.get().kind().equals(SymbolKind.PARAMETER)) {
                 String paramIn = "";
@@ -208,9 +207,9 @@ public class ServiceMemberFunctionNodeVisitor extends NodeVisitor {
                 if (isResource) {
                     // todo : param kind
                     resourceParams.add(new ResourceParameter(
-                            paramTypes, paramName.trim(), paramIn, isRequired, elementLocation));
+                            paramTypes, paramName.trim(), paramIn, isRequired, lineRange));
                 } else {
-                    remoteFunctionParams.add(new FunctionParameter(paramTypes, paramName, isRequired, elementLocation));
+                    remoteFunctionParams.add(new FunctionParameter(paramTypes, paramName, isRequired, lineRange));
                 }
             }
         }

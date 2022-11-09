@@ -42,12 +42,12 @@ import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.compiler.syntax.tree.TypeDescriptorNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
 import io.ballerina.projectdesign.ComponentModel;
-import io.ballerina.projectdesign.generators.GeneratorUtils;
+import io.ballerina.projectdesign.Utils;
 import io.ballerina.projectdesign.model.service.Service;
 import io.ballerina.projectdesign.model.service.ServiceAnnotation;
 import io.ballerina.projects.Package;
+import io.ballerina.tools.text.LineRange;
 
-import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -66,10 +66,10 @@ public class ServiceDeclarationNodeVisitor extends NodeVisitor {
     private final ComponentModel.PackageId packageId;
     private final Package currentPackage;
     private final List<Service> services = new LinkedList<>();
-    private final Path filePath;
+    private final String filePath;
 
     public ServiceDeclarationNodeVisitor(SemanticModel semanticModel, Package currentPackage,
-                                         ComponentModel.PackageId packageId, Path filePath) {
+                                         ComponentModel.PackageId packageId, String filePath) {
 
         this.packageId = packageId;
         this.semanticModel = semanticModel;
@@ -94,7 +94,7 @@ public class ServiceDeclarationNodeVisitor extends NodeVisitor {
         Optional<MetadataNode> metadataNode = serviceDeclarationNode.metadata();
         if (metadataNode.isPresent()) {
             NodeList<AnnotationNode> annotationNodes = metadataNode.get().annotations();
-            serviceAnnotation = GeneratorUtils.getServiceAnnotation(annotationNodes, this.filePath.toString());
+            serviceAnnotation = Utils.getServiceAnnotation(annotationNodes, this.filePath);
         }
 
         String serviceName = serviceNameBuilder.toString().startsWith(FORWARD_SLASH) ?
@@ -102,12 +102,13 @@ public class ServiceDeclarationNodeVisitor extends NodeVisitor {
 
         ServiceMemberFunctionNodeVisitor serviceMemberFunctionNodeVisitor =
                 new ServiceMemberFunctionNodeVisitor(serviceAnnotation.getId(),
-                        semanticModel, currentPackage, packageId, filePath.toString());
+                        semanticModel, currentPackage, packageId, filePath);
         serviceDeclarationNode.accept(serviceMemberFunctionNodeVisitor);
+        LineRange lineRange = LineRange.from(filePath,
+                serviceDeclarationNode.lineRange().startLine(), serviceDeclarationNode.lineRange().endLine());
         services.add(new Service(serviceName.trim(), serviceAnnotation.getId(),
                 getServiceType(serviceDeclarationNode), serviceMemberFunctionNodeVisitor.getResources(),
-                serviceMemberFunctionNodeVisitor.getRemoteFunctions(), serviceAnnotation, GeneratorUtils.
-                getElementLocation(filePath.toString(), serviceDeclarationNode.lineRange())));
+                serviceMemberFunctionNodeVisitor.getRemoteFunctions(), serviceAnnotation, lineRange));
     }
 
     private String getServiceType(ServiceDeclarationNode serviceDeclarationNode) {
